@@ -1,5 +1,6 @@
 import * as path from 'path';
 import * as fs from 'fs';
+import * as os from 'os';
 import chalk from 'chalk';
 import { configManager } from '../config/manager.js';
 import { ProjectWithStatus, ProjectStatus } from '../config/types.js';
@@ -7,7 +8,7 @@ import { ProjectWithStatus, ProjectStatus } from '../config/types.js';
 const SNAPSHOT_FILE = 'mcp-codebase-snapshot.json';
 
 function getSnapshotPath(): string {
-    const contextDir = path.join(require('os').homedir(), '.context');
+    const contextDir = path.join(os.homedir(), '.context');
     return path.join(contextDir, SNAPSHOT_FILE);
 }
 
