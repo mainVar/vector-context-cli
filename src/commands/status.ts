@@ -1,44 +1,8 @@
 import * as path from 'path';
-import * as fs from 'fs';
-import * as os from 'os';
 import chalk from 'chalk';
 import { configManager } from '../config/manager.js';
 import { ProjectWithStatus, ProjectStatus } from '../config/types.js';
-
-const SNAPSHOT_FILE = 'mcp-codebase-snapshot.json';
-
-function getSnapshotPath(): string {
-    const contextDir = path.join(os.homedir(), '.context');
-    return path.join(contextDir, SNAPSHOT_FILE);
-}
-
-interface SnapshotInfo {
-    status: 'indexed' | 'indexing' | 'indexfailed';
-    indexedFiles?: number;
-    totalChunks?: number;
-    indexingPercentage?: number;
-    errorMessage?: string;
-    lastUpdated?: string;
-}
-
-function loadSnapshot(): Record<string, SnapshotInfo> {
-    try {
-        const snapshotPath = getSnapshotPath();
-        if (!fs.existsSync(snapshotPath)) {
-            return {};
-        }
-        const data = fs.readFileSync(snapshotPath, 'utf8');
-        const snapshot = JSON.parse(data);
-        
-        if (snapshot.formatVersion === 'v2' && snapshot.codebases) {
-            return snapshot.codebases;
-        }
-        
-        return {};
-    } catch {
-        return {};
-    }
-}
+import { loadSnapshot, SnapshotInfo } from '../utils/snapshot.js';
 
 export function statusCommand(projectPath?: string): void {
     const snapshot = loadSnapshot();
@@ -52,7 +16,7 @@ export function statusCommand(projectPath?: string): void {
             return;
         }
         
-        showProjectStatus(project, snapshot[absolutePath]);
+        showProjectStatus(project, snapshot.codebases[absolutePath]);
     } else {
         const projects = Object.values(configManager.getAllProjects());
         
@@ -64,7 +28,7 @@ export function statusCommand(projectPath?: string): void {
         console.log(chalk.bold('\nProject Status\n'));
         
         projects.forEach(project => {
-            const info = snapshot[project.path];
+            const info = snapshot.codebases[project.path];
             showProjectStatus(project, info, true);
         });
     }
@@ -158,7 +122,7 @@ export function getProjectsWithStatus(): ProjectWithStatus[] {
     const projects = Object.values(configManager.getAllProjects());
     
     return projects.map(project => {
-        const info = snapshot[project.path];
+        const info = snapshot.codebases[project.path];
         
         const result: ProjectWithStatus = {
             ...project,

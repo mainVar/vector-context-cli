@@ -1,160 +1,18 @@
 import * as path from 'path';
-import * as os from 'os';
-import * as fs from 'fs';
 import chalk from 'chalk';
 import ora from 'ora';
 import { configManager } from '../config/manager.js';
-
-const SNAPSHOT_FILE = 'mcp-codebase-snapshot.json';
-
-function getSnapshotPath(): string {
-    const contextDir = path.join(os.homedir(), '.context');
-    return path.join(contextDir, SNAPSHOT_FILE);
-}
-
-interface SnapshotInfo {
-    status: 'indexed' | 'indexing' | 'indexfailed';
-    indexedFiles?: number;
-    totalChunks?: number;
-    indexingPercentage?: number;
-    errorMessage?: string;
-    lastUpdated?: string;
-    indexStatus?: 'completed' | 'limit_reached';
-}
-
-interface Snapshot {
-    formatVersion: string;
-    codebases: Record<string, SnapshotInfo>;
-    lastUpdated: string;
-}
-
-function loadSnapshot(): Snapshot {
-    const snapshotPath = getSnapshotPath();
-    try {
-        if (fs.existsSync(snapshotPath)) {
-            const data = fs.readFileSync(snapshotPath, 'utf8');
-            const snapshot = JSON.parse(data);
-            if (snapshot.formatVersion === 'v2' && snapshot.codebases) {
-                return snapshot;
-            }
-        }
-    } catch {
-        // ignore errors
-    }
-    return {
-        formatVersion: 'v2',
-        codebases: {},
-        lastUpdated: new Date().toISOString()
-    };
-}
-
-function saveSnapshot(snapshot: Snapshot): void {
-    const snapshotPath = getSnapshotPath();
-    const contextDir = path.dirname(snapshotPath);
-    if (!fs.existsSync(contextDir)) {
-        fs.mkdirSync(contextDir, { recursive: true });
-    }
-    snapshot.lastUpdated = new Date().toISOString();
-    fs.writeFileSync(snapshotPath, JSON.stringify(snapshot, null, 2));
-}
-
-function updateSnapshotIndexed(codebasePath: string, indexedFiles: number, totalChunks: number): void {
-    const snapshot = loadSnapshot();
-    snapshot.codebases[codebasePath] = {
-        status: 'indexed',
-        indexedFiles,
-        totalChunks,
-        indexStatus: 'completed',
-        lastUpdated: new Date().toISOString()
-    };
-    saveSnapshot(snapshot);
-}
-
-function updateSnapshotFailed(codebasePath: string, errorMessage: string): void {
-    const snapshot = loadSnapshot();
-    snapshot.codebases[codebasePath] = {
-        status: 'indexfailed',
-        errorMessage,
-        lastUpdated: new Date().toISOString()
-    };
-    saveSnapshot(snapshot);
-}
+import { createEmbedding, createVectorDatabase } from '../utils/embedding.js';
+import { updateSnapshotIndexed, updateSnapshotFailed } from '../utils/snapshot.js';
 import { 
     Context, 
     ContextConfig, 
-    QdrantVectorDB, 
-    MilvusVectorDatabase,
-    OpenAIEmbedding,
-    VoyageAIEmbedding,
-    GeminiEmbedding,
-    OllamaEmbedding,
-    LMStudioEmbedding,
-    envManager,
     logger
 } from '@vector-context/core';
 
 export interface IndexCommandOptions {
     force?: boolean;
     verbose?: boolean;
-}
-
-function createEmbedding() {
-    const provider = envManager.get('EMBEDDING_PROVIDER') || 'LMStudio';
-    const model = envManager.get('EMBEDDING_MODEL');
-    
-    switch (provider) {
-        case 'OpenAI':
-            return new OpenAIEmbedding({
-                apiKey: envManager.get('OPENAI_API_KEY') || '',
-                model: model || 'text-embedding-3-small',
-                ...(envManager.get('OPENAI_BASE_URL') && { baseURL: envManager.get('OPENAI_BASE_URL') }),
-            });
-        case 'VoyageAI':
-            return new VoyageAIEmbedding({
-                apiKey: envManager.get('VOYAGEAI_API_KEY') || '',
-                model: model || 'voyage-code-3',
-            });
-        case 'Gemini':
-            return new GeminiEmbedding({
-                apiKey: envManager.get('GEMINI_API_KEY') || '',
-                model: model || 'gemini-embedding-001',
-                ...(envManager.get('GEMINI_BASE_URL') && { baseURL: envManager.get('GEMINI_BASE_URL') }),
-            });
-        case 'Ollama':
-            return new OllamaEmbedding({
-                model: model || envManager.get('OLLAMA_MODEL') || 'nomic-embed-text',
-                host: envManager.get('OLLAMA_HOST') || 'http://127.0.0.1:11434',
-            });
-        case 'LMStudio':
-        default:
-            return new LMStudioEmbedding({
-                model: model || 'text-embedding-nomic-embed-text-v1.5',
-                baseURL: envManager.get('LMSTUDIO_BASE_URL') || 'http://localhost:1234/v1',
-            });
-    }
-}
-
-function createVectorDatabase() {
-    const provider = envManager.get('VECTOR_STORE_PROVIDER') || 'Qdrant';
-    
-    if (provider === 'Qdrant') {
-        return new QdrantVectorDB(envManager.get('QDRANT_ADDRESS') || 'http://localhost:6333');
-    } else {
-        return new MilvusVectorDatabase({
-            address: envManager.get('MILVUS_ADDRESS'),
-            ...(envManager.get('MILVUS_TOKEN') && { token: envManager.get('MILVUS_TOKEN') }),
-        });
-    }
-}
-
-function createContext(): Context {
-    const embedding = createEmbedding();
-    const vectorDatabase = createVectorDatabase();
-    
-    return new Context({
-        embedding,
-        vectorDatabase,
-    });
 }
 
 export async function indexCommand(projectPath: string | undefined, options: IndexCommandOptions = {}): Promise<void> {
