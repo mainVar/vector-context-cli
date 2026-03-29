@@ -10,6 +10,7 @@ import { indexCommand } from './commands/index.js';
 import { ignoreCommand, setIgnoreOptions } from './commands/ignore.js';
 import { presetCommand, listPresets } from './commands/preset.js';
 import { watchCommand } from './commands/watch.js';
+import { initCommand } from './commands/init.js';
 import { getPresetDescriptions } from './presets/types.js';
 import { runTUI } from './tui/index.js';
 
@@ -19,6 +20,7 @@ ${chalk.bold('Usage')}
 
 ${chalk.bold('Commands')}
   interactive, i    Run interactive TUI mode (default)
+  init              Initialize AI integration (create SKILL.md and AGENTS.md)
   watch, w          Watch projects and auto-reindex on changes
   add <path>        Add a project to config
   remove <path>     Remove a project from config
@@ -36,6 +38,8 @@ ${chalk.bold('Options')}
   --force           Force re-index
   --verbose         Show detailed output
   --all             Show all patterns
+  --skill-only      Init: create only SKILL.md
+  --agents-only     Init: create only AGENTS.md
   --disabled        Add project as disabled
   --enabled         Filter to show only enabled projects
   --help            Show this help
@@ -57,6 +61,8 @@ ${chalk.bold('Examples')}
         force: { type: 'boolean', short: 'f' },
         verbose: { type: 'boolean', short: 'v' },
         all: { type: 'boolean', short: 'a' },
+        skillOnly: { type: 'boolean' },
+        agentsOnly: { type: 'boolean' },
         disabled: { type: 'boolean', short: 'd' },
         enabled: { type: 'boolean' },
     },
@@ -67,6 +73,14 @@ async function main(): Promise<void> {
     const command = input[0] || 'interactive';
 
     switch (command) {
+        case 'init':
+            initCommand(input[1], {
+                skillOnly: flags.skillOnly,
+                agentsOnly: flags.agentsOnly,
+                force: flags.force,
+            });
+            break;
+
         case 'interactive':
         case 'i':
             await runTUI();

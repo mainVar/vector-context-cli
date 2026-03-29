@@ -15,6 +15,30 @@ pnpm install
 
 ## Usage
 
+### Initialize AI Integration
+
+```bash
+vctx init [path] [options]
+```
+
+Sets up AI agent integration by creating:
+- `.opencode/skills/vector-context-cli/SKILL.md` — opencode skill (auto-discovered by AI agents)
+- `AGENTS.md` — project instructions (compatible with Claude Code, Cursor, and other AI tools)
+
+Options:
+- `--skill-only` - Create only the opencode skill file
+- `--agents-only` - Create/update only AGENTS.md
+- `--force` - Overwrite existing files without confirmation
+
+Examples:
+```bash
+vctx init                    # Initialize in current directory
+vctx init ./my-project       # Initialize in specific project
+vctx init --skill-only       # Create only SKILL.md
+vctx init --agents-only      # Create only AGENTS.md
+vctx init --force            # Overwrite existing files
+```
+
 ### Interactive Mode (TUI)
 
 ```bash
