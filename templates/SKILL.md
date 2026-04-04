@@ -64,6 +64,7 @@ If not ready, ask the user to ensure:
 
 | Preset | Use Case |
 |--------|----------|
+| `unreal` | Unreal Engine 5 / C++ game development |
 | `unity` | Unity/C# game development |
 | `node` | Node.js, TypeScript, JavaScript |
 | `python` | Python projects |

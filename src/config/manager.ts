@@ -215,6 +215,9 @@ export class ConfigManager {
     private detectPreset(projectPath: string): string {
         const files = fs.readdirSync(projectPath);
         
+        if (files.some(f => f.endsWith('.uproject'))) {
+            return 'unreal';
+        }
         if (files.includes('Assets') && files.includes('ProjectSettings')) {
             return 'unity';
         }

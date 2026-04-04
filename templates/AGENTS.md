@@ -12,7 +12,7 @@ Semantic code search tool powered by vector embeddings. Use `vctx` CLI commands 
 
 ### Available Presets
 
-`node`, `python`, `unity`, `rust`, `go`, `java`, `web`, `minimal`
+`unreal`, `node`, `python`, `unity`, `rust`, `go`, `java`, `web`, `minimal`
 
 ### Prerequisites
 

@@ -1,6 +1,34 @@
 import { Preset } from '../config/types.js';
 
 export const PRESETS: Record<string, Preset> = {
+    unreal: {
+        name: 'unreal',
+        description: 'Unreal Engine 5 game development project',
+        ignorePatterns: [
+            'Binaries/**',
+            'Intermediate/**',
+            'Saved/**',
+            'DerivedDataCache/**',
+            'Build/**',
+            '.vs/**',
+            '.idea/**',
+            '*.sln',
+            '*.vcxproj',
+            '*.vcxproj.*',
+            'Plugins/*/Binaries/**',
+            'Plugins/*/Intermediate/**',
+            'Content/**/*.uasset',
+            'Content/**/*.umap',
+            '*.exe',
+            '*.dll',
+            '*.so',
+            '*.dylib',
+            '*.pdb',
+            '*.target',
+            '*.modules',
+        ],
+        extensions: ['.cpp', '.h', '.c', '.inl', '.cs', '.usf', '.ush', '.uplugin', '.uproject', '.ini'],
+    },
     unity: {
         name: 'unity',
         description: 'Unity game development project',

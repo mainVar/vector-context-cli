@@ -58,7 +58,7 @@ vctx add <path> [options]
 ```
 
 Options:
-- `--preset <name>` - Preset (unity, node, python, rust, go, java, web, minimal)
+- `--preset <name>` - Preset (unreal, unity, node, python, rust, go, java, web, minimal)
 - `--name <name>` - Custom project name
 - `--ignore <pattern>` - Add ignore pattern (can be used multiple times)
 - `--extensions <ext>` - Add file extensions
@@ -144,6 +144,7 @@ vctx presets                    # List all presets
 
 | Preset | Description |
 |--------|-------------|
+| `unreal` | Unreal Engine 5 / C++ game development |
 | `unity` | Unity game development |
 | `node` | Node.js / JavaScript / TypeScript |
 | `python` | Python projects |
@@ -152,6 +153,22 @@ vctx presets                    # List all presets
 | `java` | Java / JVM projects |
 | `web` | Frontend (React, Vue, Svelte) |
 | `minimal` | Minimal ignore patterns |
+
+### Unreal Engine 5 Preset
+
+```js
+ignorePatterns: [
+  'Binaries/**', 'Intermediate/**', 'Saved/**',
+  'DerivedDataCache/**', 'Build/**',
+  '.vs/**', '.idea/**',
+  '*.sln', '*.vcxproj', '*.vcxproj.*',
+  'Plugins/*/Binaries/**', 'Plugins/*/Intermediate/**',
+  'Content/**/*.uasset', 'Content/**/*.umap',
+  '*.exe', '*.dll', '*.so', '*.dylib', '*.pdb',
+  '*.target', '*.modules',
+]
+extensions: ['.cpp', '.h', '.c', '.inl', '.cs', '.usf', '.ush', '.uplugin', '.uproject', '.ini']
+```
 
 ### Unity Preset
 
