@@ -1,5 +1,5 @@
-import { 
-    QdrantVectorDB, 
+import {
+    QdrantVectorDB,
     MilvusVectorDatabase,
     OpenAIEmbedding,
     VoyageAIEmbedding,
@@ -7,6 +7,7 @@ import {
     OllamaEmbedding,
     LMStudioEmbedding,
     envManager,
+    getIndexingSpeedConfig,
 } from '@vector-context/core';
 
 export function createEmbedding() {
@@ -41,6 +42,7 @@ export function createEmbedding() {
             return new LMStudioEmbedding({
                 model: model || 'text-embedding-nomic-embed-text-v1.5',
                 baseURL: envManager.get('LMSTUDIO_BASE_URL') || 'http://localhost:1234/v1',
+                speedConfig: getIndexingSpeedConfig(envManager.get('INDEXING_SPEED')),
             });
     }
 }

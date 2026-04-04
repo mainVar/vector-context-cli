@@ -268,7 +268,9 @@ Thumbs.db
 | `i` | Index selected project |
 | `e` | Edit project |
 | `p` | Select preset for project |
+| `s` | Open Settings |
 | `l` | Refresh list |
+| `w` | Watch mode |
 | `q` / `Esc` | Quit |
 
 ### Presets Screen
@@ -279,6 +281,29 @@ Thumbs.db
 | `Enter` | Apply selected preset |
 | `Esc` | Cancel |
 
+### Settings Screen
+
+Press `s` from the main screen to open Settings. It has two tabs (switch with `Tab`):
+
+**Embedding Model tab** — fetches all embedding models currently loaded in LM Studio and lets you pick one. The selection is saved to `~/.context/.env` as `EMBEDDING_MODEL`.
+
+**Indexing Speed tab** — select a hardware load profile:
+
+| Profile | LM batch | Delay | Chunk buffer | When to use |
+|---------|----------|-------|--------------|-------------|
+| `low` | 3 | 200 ms | 50 | Working alongside indexing |
+| `medium` | 7 | 50 ms | 100 | Default balanced mode |
+| `max` | 15 | 0 ms | 200 | Fastest indexing, full load |
+
+The selection is saved to `~/.context/.env` as `INDEXING_SPEED`.
+
+| Key | Action |
+|---------|-----|
+| `Tab` | Switch between Model / Speed tabs |
+| `↑` / `↓` | Navigate options |
+| `Enter` | Apply selected option |
+| `Esc` | Cancel |
+
 ## Environment Variables
 
 CLI uses the same variables as the core package:
@@ -286,7 +311,8 @@ CLI uses the same variables as the core package:
 | Variable | Description | Default |
 |--------|------|------------------|
 | `EMBEDDING_PROVIDER` | Embedding provider | `LMStudio` |
-| `EMBEDDING_MODEL` | Model for embeddings | - |
+| `EMBEDDING_MODEL` | Model for embeddings (select via TUI Settings) | - |
+| `INDEXING_SPEED` | Indexing load preset: `low`, `medium`, `max` (select via TUI Settings) | `medium` |
 | `VECTOR_STORE_PROVIDER` | Vector DB provider | `Qdrant` |
 | `QDRANT_ADDRESS` | Qdrant address | `http://localhost:6333` |
 | `MILVUS_ADDRESS` | Milvus address | - |

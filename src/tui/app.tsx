@@ -10,8 +10,17 @@ import { indexCommand } from '../commands/index.js';
 import { addCommand } from '../commands/add.js';
 import { removeCommand } from '../commands/remove.js';
 import { watchCommand } from '../commands/watch.js';
+import {
+    fetchLMStudioEmbeddingModels,
+    envManager,
+    INDEXING_SPEED_PRESETS,
+    INDEXING_SPEED_DESCRIPTIONS,
+    IndexingSpeed,
+} from '@vector-context/core';
 
-type Screen = 'main' | 'add' | 'edit' | 'presets' | 'indexing';
+type Screen = 'main' | 'add' | 'edit' | 'presets' | 'indexing' | 'settings';
+
+type SettingsTab = 'model' | 'speed';
 
 interface TUIState {
     projects: ProjectWithStatus[];
@@ -21,7 +30,16 @@ interface TUIState {
     input: string;
     message: string | null;
     messageType: 'success' | 'error' | 'info';
+    // Settings screen
+    settingsTab: SettingsTab;
+    lmModels: string[];
+    lmModelsLoading: boolean;
+    lmModelsError: string | null;
+    selectedLmModel: number;
+    selectedSpeed: number;
 }
+
+const SPEED_OPTIONS: IndexingSpeed[] = ['low', 'medium', 'max'];
 
 function App() {
     const { exit } = useApp();
@@ -33,6 +51,12 @@ function App() {
         input: '',
         message: null,
         messageType: 'info',
+        settingsTab: 'model',
+        lmModels: [],
+        lmModelsLoading: false,
+        lmModelsError: null,
+        selectedLmModel: 0,
+        selectedSpeed: SPEED_OPTIONS.indexOf((envManager.get('INDEXING_SPEED') as IndexingSpeed) || 'medium'),
     });
 
     const refreshProjects = () => {
@@ -107,6 +131,36 @@ function App() {
             } else if (inputKey === 'l') {
                 refreshProjects();
                 showMessage('Projects refreshed', 'info');
+            } else if (inputKey === 's') {
+                // Open settings screen and start loading LM Studio models
+                setState(prev => ({
+                    ...prev,
+                    screen: 'settings',
+                    settingsTab: 'model',
+                    lmModels: [],
+                    lmModelsLoading: true,
+                    lmModelsError: null,
+                    selectedLmModel: 0,
+                }));
+                fetchLMStudioEmbeddingModels().then(models => {
+                    setState(prev => {
+                        const currentModel = envManager.get('EMBEDDING_MODEL') || '';
+                        const idx = models.indexOf(currentModel);
+                        return {
+                            ...prev,
+                            lmModels: models,
+                            lmModelsLoading: false,
+                            lmModelsError: models.length === 0 ? 'No models found. Is LM Studio running with an embedding model loaded?' : null,
+                            selectedLmModel: idx >= 0 ? idx : 0,
+                        };
+                    });
+                }).catch(() => {
+                    setState(prev => ({
+                        ...prev,
+                        lmModelsLoading: false,
+                        lmModelsError: 'Could not connect to LM Studio (http://localhost:1234)',
+                    }));
+                });
             } else if (inputKey === 'w') {
                 (async () => {
                     exit();
@@ -115,6 +169,37 @@ function App() {
                 })();
             } else if (key.escape || inputKey === 'q') {
                 exit();
+            }
+        } else if (currentState.screen === 'settings') {
+            if (key.escape) {
+                setState(prev => ({ ...prev, screen: 'main' }));
+            } else if (inputKey === '\t' || inputKey === 'tab') {
+                setState(prev => ({
+                    ...prev,
+                    settingsTab: prev.settingsTab === 'model' ? 'speed' : 'model',
+                }));
+            } else if (currentState.settingsTab === 'model') {
+                if (key.upArrow) {
+                    setState(prev => ({ ...prev, selectedLmModel: Math.max(0, prev.selectedLmModel - 1) }));
+                } else if (key.downArrow) {
+                    setState(prev => ({ ...prev, selectedLmModel: Math.min(prev.lmModels.length - 1, prev.selectedLmModel + 1) }));
+                } else if (key.return && currentState.lmModels.length > 0) {
+                    const model = currentState.lmModels[currentState.selectedLmModel];
+                    envManager.set('EMBEDDING_MODEL', model);
+                    showMessage(`Embedding model set to: ${model}`, 'success');
+                    setState(prev => ({ ...prev, screen: 'main' }));
+                }
+            } else if (currentState.settingsTab === 'speed') {
+                if (key.upArrow) {
+                    setState(prev => ({ ...prev, selectedSpeed: Math.max(0, prev.selectedSpeed - 1) }));
+                } else if (key.downArrow) {
+                    setState(prev => ({ ...prev, selectedSpeed: Math.min(SPEED_OPTIONS.length - 1, prev.selectedSpeed + 1) }));
+                } else if (key.return) {
+                    const speed = SPEED_OPTIONS[currentState.selectedSpeed];
+                    envManager.set('INDEXING_SPEED', speed);
+                    showMessage(`Indexing speed set to: ${speed}`, 'success');
+                    setState(prev => ({ ...prev, screen: 'main' }));
+                }
             }
         } else if (currentState.screen === 'presets') {
             const presets = getPresetDescriptions();
@@ -237,6 +322,79 @@ function App() {
         );
     }
 
+    if (screen === 'settings') {
+        const currentModel = envManager.get('EMBEDDING_MODEL') || '(not set)';
+        const currentSpeed = (envManager.get('INDEXING_SPEED') as IndexingSpeed) || 'medium';
+        return (
+            <Box flexDirection="column" padding={1}>
+                <Text bold color="cyan">Settings</Text>
+                <Box marginTop={1} marginBottom={1}>
+                    <Text
+                        bold={state.settingsTab === 'model'}
+                        color={state.settingsTab === 'model' ? 'cyan' : 'gray'}
+                    >
+                        [Embedding Model]
+                    </Text>
+                    <Text>  </Text>
+                    <Text
+                        bold={state.settingsTab === 'speed'}
+                        color={state.settingsTab === 'speed' ? 'cyan' : 'gray'}
+                    >
+                        [Indexing Speed]
+                    </Text>
+                </Box>
+
+                {state.settingsTab === 'model' && (
+                    <Box flexDirection="column">
+                        <Text dimColor>Current: <Text color="yellow">{currentModel}</Text></Text>
+                        <Box marginTop={1} flexDirection="column">
+                            {state.lmModelsLoading && <Text color="yellow">Loading models from LM Studio...</Text>}
+                            {state.lmModelsError && <Text color="red">{state.lmModelsError}</Text>}
+                            {!state.lmModelsLoading && !state.lmModelsError && state.lmModels.map((m, i) => {
+                                const isSelected = i === state.selectedLmModel;
+                                const isCurrent = m === envManager.get('EMBEDDING_MODEL');
+                                return (
+                                    <Text key={m} color={isSelected ? 'cyan' : undefined}>
+                                        {isSelected ? '> ' : '  '}{isCurrent ? '* ' : '  '}{m}
+                                    </Text>
+                                );
+                            })}
+                        </Box>
+                    </Box>
+                )}
+
+                {state.settingsTab === 'speed' && (
+                    <Box flexDirection="column">
+                        <Text dimColor>Current: <Text color="yellow">{currentSpeed}</Text></Text>
+                        <Box marginTop={1} flexDirection="column">
+                            {SPEED_OPTIONS.map((speed, i) => {
+                                const isSelected = i === state.selectedSpeed;
+                                const isCurrent = speed === currentSpeed;
+                                const cfg = INDEXING_SPEED_PRESETS[speed];
+                                return (
+                                    <Box key={speed} flexDirection="column" marginBottom={0}>
+                                        <Text color={isSelected ? 'cyan' : undefined}>
+                                            {isSelected ? '> ' : '  '}{isCurrent ? '* ' : '  '}
+                                            <Text bold color="yellow">{speed.padEnd(8)}</Text>
+                                            <Text dimColor> batch:{cfg.lmBatchSize} delay:{cfg.lmDelayMs}ms chunks:{cfg.embeddingBatchSize}</Text>
+                                        </Text>
+                                        {isSelected && (
+                                            <Text dimColor>       {INDEXING_SPEED_DESCRIPTIONS[speed]}</Text>
+                                        )}
+                                    </Box>
+                                );
+                            })}
+                        </Box>
+                    </Box>
+                )}
+
+                <Box marginTop={1}>
+                    <Text dimColor>↑↓ Navigate | Enter Apply | Tab Switch tab | Esc Back</Text>
+                </Box>
+            </Box>
+        );
+    }
+
     return (
         <Box flexDirection="column" padding={1}>
             <Box marginBottom={1}>
@@ -293,7 +451,7 @@ function App() {
 
             <Box marginTop={1}>
                 <Text dimColor>
-                    [a] Add [r] Remove [i] Index [e] Edit [p] Presets [l] Refresh [w] Watch [q] Quit
+                    [a] Add [r] Remove [i] Index [e] Edit [p] Presets [s] Settings [l] Refresh [w] Watch [q] Quit
                 </Text>
             </Box>
         </Box>
