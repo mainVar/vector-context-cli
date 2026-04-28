@@ -55,11 +55,13 @@ async function indexSingleProject(projectPath: string, options: IndexCommandOpti
     try {
         const ignorePatterns = configManager.getEffectiveIgnorePatterns(absolutePath);
         const customExtensions = configManager.getEffectiveExtensions(absolutePath);
-        
+        const filenameOnlyExtensions = configManager.getEffectiveFilenameOnlyExtensions(absolutePath);
+
         const contextConfig: ContextConfig = {
             ignorePatterns,
             customExtensions,
             customIgnorePatterns: project.customIgnore,
+            filenameOnlyExtensions,
         };
         
         const embedding = createEmbedding();

@@ -19,6 +19,7 @@ export interface Preset {
     description: string;
     ignorePatterns: string[];
     extensions?: string[];
+    filenameOnlyExtensions?: string[];
 }
 
 export type ProjectStatus = 'indexed' | 'indexing' | 'indexfailed' | 'waiting' | 'not_indexed';

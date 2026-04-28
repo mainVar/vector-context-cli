@@ -52,7 +52,27 @@ export const PRESETS: Record<string, Preset> = {
             '*.exe',
             '*.app',
         ],
-        extensions: ['.cs', '.shader', '.cginc', '.hlsl', '.glsl', '.compute', '.unity', '.prefab', '.asset', '.asmdef'],
+        extensions: ['.cs', '.shader', '.cginc', '.hlsl', '.glsl', '.compute', '.asmdef'],
+        // Large or binary Unity assets — indexed as a single chunk containing only the file path,
+        // so semantic search can locate them by name without embedding their contents.
+        filenameOnlyExtensions: [
+            // Unity-serialized assets
+            '.unity', '.prefab', '.asset', '.mat', '.anim', '.controller', '.overrideController',
+            '.mask', '.physicMaterial', '.physicsMaterial2D', '.mixer', '.playable', '.signal',
+            '.spriteatlas', '.spriteatlasv2', '.terrainlayer', '.lighting', '.giparams',
+            '.shadergraph', '.shadersubgraph', '.preset', '.brush', '.flare', '.fontsettings',
+            '.guiskin', '.cubemap', '.renderTexture',
+            // 3D models
+            '.fbx', '.obj', '.blend', '.dae', '.3ds', '.ma', '.mb', '.max',
+            // Textures / images
+            '.png', '.jpg', '.jpeg', '.gif', '.bmp', '.tga', '.psd', '.tif', '.tiff', '.exr', '.hdr',
+            // Audio
+            '.wav', '.mp3', '.ogg', '.aiff', '.aif', '.flac',
+            // Video
+            '.mp4', '.mov', '.webm', '.avi',
+            // Fonts
+            '.ttf', '.otf',
+        ],
     },
     node: {
         name: 'node',

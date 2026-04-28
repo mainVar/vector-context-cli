@@ -35,11 +35,13 @@ export async function watchCommand(): Promise<void> {
     for (const project of projects) {
         const ignorePatterns = configManager.getEffectiveIgnorePatterns(project.path);
         const customExtensions = configManager.getEffectiveExtensions(project.path);
-        
+        const filenameOnlyExtensions = configManager.getEffectiveFilenameOnlyExtensions(project.path);
+
         const contextConfig: ContextConfig = {
             ignorePatterns,
             customExtensions,
             customIgnorePatterns: project.customIgnore,
+            filenameOnlyExtensions,
         };
         
         const embedding = createEmbedding();

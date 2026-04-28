@@ -197,6 +197,14 @@ export class ConfigManager {
         return [...new Set(extensions)];
     }
 
+    public getEffectiveFilenameOnlyExtensions(projectPath: string): string[] {
+        const project = this.getProject(projectPath);
+        if (project?.preset && PRESETS[project.preset]) {
+            return [...(PRESETS[project.preset].filenameOnlyExtensions || [])];
+        }
+        return [];
+    }
+
     private loadGlobalIgnore(): string[] {
         try {
             if (fs.existsSync(this.globalIgnorePath)) {
