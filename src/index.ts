@@ -7,6 +7,7 @@ import { removeCommand } from './commands/remove.js';
 import { listCommand } from './commands/list.js';
 import { statusCommand } from './commands/status.js';
 import { indexCommand } from './commands/index.js';
+import { searchCommand } from './commands/search.js';
 import { ignoreCommand, setIgnoreOptions } from './commands/ignore.js';
 import { presetCommand, listPresets } from './commands/preset.js';
 import { watchCommand } from './commands/watch.js';
@@ -26,6 +27,7 @@ ${chalk.bold('Commands')}
   remove <path>     Remove a project from config
   list              List all configured projects
   index [path]      Index project(s)
+  search <path> <query>   Semantic search in an indexed project
   status [path]     Show indexing status
   ignore <path> <add|remove|list> [pattern]  Manage ignore patterns
   preset <path> [name]   Set or view project preset
@@ -42,6 +44,10 @@ ${chalk.bold('Options')}
   --agents-only     Init: create only AGENTS.md
   --disabled        Add project as disabled
   --enabled         Filter to show only enabled projects
+  --limit <n>       search: max results (default 10, max 50)
+  --threshold <n>   search: min similarity score 0..1 (default 0.3)
+  --extensions <ext> search: filter by file extension(s), repeatable (e.g. -e .cs -e .shader)
+  --json            search: output raw JSON
   --help            Show this help
   --version         Show version
 
@@ -49,6 +55,8 @@ ${chalk.bold('Examples')}
   $ vctx add ./my-project --preset node
   $ vctx add ./unity-game --preset unity --ignore "Library/**"
   $ vctx index ./my-project
+  $ vctx search ./my-project "function that handles user authentication"
+  $ vctx search ./my-project "player movement" --limit 5 -e .cs
   $ vctx status
   $ vctx ignore ./my-project add "*.test.ts"
 `, {
@@ -65,6 +73,9 @@ ${chalk.bold('Examples')}
         agentsOnly: { type: 'boolean' },
         disabled: { type: 'boolean', short: 'd' },
         enabled: { type: 'boolean' },
+        limit: { type: 'number', short: 'l' },
+        threshold: { type: 'number' },
+        json: { type: 'boolean' },
     },
 });
 
@@ -124,6 +135,21 @@ async function main(): Promise<void> {
             await indexCommand(input[1], {
                 force: flags.force,
                 verbose: flags.verbose,
+            });
+            break;
+
+        case 'search':
+        case 's':
+            if (!input[1] || !input[2]) {
+                console.log(chalk.red('Error: Project path and query are required'));
+                console.log(chalk.gray('Usage: vctx search <path> <query>'));
+                process.exit(1);
+            }
+            await searchCommand(input[1], input.slice(2).join(' '), {
+                limit: flags.limit,
+                threshold: flags.threshold,
+                extensions: flags.extensions,
+                json: flags.json,
             });
             break;
 
