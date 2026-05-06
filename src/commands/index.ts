@@ -95,6 +95,8 @@ async function indexSingleProject(projectPath: string, options: IndexCommandOpti
         configManager.updateProject(absolutePath, {
             lastIndexed: new Date().toISOString(),
         });
+
+        await context.dispose();
         
     } catch (error: any) {
         spinner.fail(chalk.red(`✗ Failed to index ${project.name}`));

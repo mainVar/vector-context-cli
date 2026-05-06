@@ -79,9 +79,12 @@ export async function searchCommand(
     try {
         results = await context.semanticSearch(absolutePath, query, limit, threshold, filterExpr);
     } catch (error: any) {
+        await context.dispose();
         console.log(chalk.red(`Search failed: ${error.message}`));
         process.exit(1);
     }
+
+    await context.dispose();
 
     if (options.json) {
         console.log(JSON.stringify(results, null, 2));
